@@ -1,12 +1,33 @@
+###########################################################################################################
+#
+# Methodes numeriques pour les problemes de grande dimension
+# 
+# Projet 
+# 
+# Raphael GRAFF-MENTZINGER, Mohammed Amine KHELDOUNI, Clement RIU, Anne SPITZ, Laurent THANWERDAS
+# 
+###########################################################################################################
+
 import math
 import numpy as np 
 import matplotlib.pyplot as plt 
 from mpl_toolkits.mplot3d import Axes3D
 
-### Donnees ###
+###########################################################################################################
+# Donnees
+###########################################################################################################
 
 nu = 0.1
+
+# Duree totale de la simulation
 T = 10.
+
+# H := x -> alpha * x
+alpha = 1.
+
+###########################################################################################################
+# Donnees
+###########################################################################################################
 
 def m_0(x):
 	if x < 0 or x > 1:
@@ -24,7 +45,9 @@ def F(x):
 	return 3*np.sin(x);
 F = np.vectorize(F)
 
-### Calcul de m(x,t) ###
+###########################################################################################################
+# Calcul de m(x,t) 
+###########################################################################################################
 
 def M_0(N):
 	x = np.linspace(0,1,N+1)
@@ -57,9 +80,9 @@ def M_suivant(N,P,A,M_actuel):
 def A_mat(N,mode):
 	delta_x = 1. / N
 	if mode == "amont":
-		return (nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (1. / delta_x) * mat_derivee_amont(N)
+		return (nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (alpha / delta_x) * mat_derivee_amont(N)
 	else:
-		return (nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (1. / delta_x) * mat_derivee_aval(N)
+		return (nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (alpha / delta_x) * mat_derivee_aval(N)
 
 def M(N,P,mode):
 	A = A_mat(N,mode)
@@ -90,7 +113,9 @@ def affiche_M(N,P,mode):
 	ax.scatter(np.array(espace), np.array(temps), np.array(ordonnee))
 	plt.show()
 
-### Calcul de u(x,t) ###
+###########################################################################################################
+# Calcul de u(x,t) 
+###########################################################################################################
 
 def U_T(N):
 	x = np.linspace(0,1,N+1)
@@ -100,9 +125,9 @@ def U_T(N):
 def B_mat(N,mode):
 	delta_x = 1. / N
 	if mode == "amont":
-		return (-nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (1. / delta_x) * mat_derivee_amont(N)
+		return (-nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (alpha / delta_x) * mat_derivee_amont(N)
 	else:
-		return (-nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (1. / delta_x) * mat_derivee_aval(N)
+		return (-nu / 2. / delta_x / delta_x) * mat_derivee_seconde(N) + (alpha / delta_x) * mat_derivee_aval(N)
 
 def U_suivant(N,P,B,U_actuel,Fm):
 	delta_t = T / (P - 1)
@@ -149,7 +174,9 @@ def affiche_M_U(N,P,mode):
 	ax2.scatter(np.array(espace), np.array(temps), np.array(ordonnee2))
 	plt.show()
 
-### POD sur M ###
+###########################################################################################################
+# POD sur M
+###########################################################################################################
 
 def M_barre(M,r):
 	M_valeurs = np.copy(M)
@@ -222,7 +249,9 @@ def trace_erreur_M(r_min,r_max,N,P,mode):
 	plt.plot(r,erreurs)
 	plt.show()
 
-### POD sur U ###
+###########################################################################################################
+# POD sur U
+###########################################################################################################
 
 def U_barre(U,r):
 	U_valeurs = np.copy(U)
@@ -305,7 +334,9 @@ def trace_erreur_U(r_min,r_max,N,P,mode,M):
 	plt.plot(r,erreurs)
 	plt.show()
 
-### Tests ###
+###########################################################################################################
+# Tests
+###########################################################################################################
 
 N = 60
 P = 20
