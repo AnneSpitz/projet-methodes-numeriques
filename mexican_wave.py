@@ -42,7 +42,6 @@ def m_0(x):
 		return 1.
 	if x>=0.9 and x<1:
 		return np.exp(- ((x - 0.9)**2) / (2 * sigma * sigma) )
-	#return np.sin(2 * np.pi * x)
 m_0 = np.vectorize(m_0)
 
 def u_T(x):
@@ -174,10 +173,11 @@ def affiche_M_U(N,P,mode):
 		ligne_M = M_valeurs[te]
 		ligne_U = U_valeurs[te]
 		for x in range(len(X)):
-			espace.append(X[x])
-			temps.append(t[te])
-			ordonnee1.append(ligne_M[x])
-			ordonnee2.append(ligne_U[x])
+			if X[x] > 0.09:
+				espace.append(X[x])
+				temps.append(t[te])
+				ordonnee1.append(ligne_M[x])
+				ordonnee2.append(ligne_U[x])
 	fig = plt.figure()
 	ax1 = fig.add_subplot(121, projection='3d')
 	ax1.scatter(np.array(espace), np.array(temps), np.array(ordonnee1))
@@ -186,172 +186,7 @@ def affiche_M_U(N,P,mode):
 	plt.show()
 
 ###########################################################################################################
-# POD sur M
-###########################################################################################################
-
-def M_barre(M,r):
-	M_valeurs = np.copy(M)
-	M_valeurs = np.transpose(M_valeurs)
-	gauche,val_p,droite = np.linalg.svd(M_valeurs)
-	return gauche[:,:r]
-
-def A_tilde(A,M_bar):
-	return np.dot( np.transpose(M_bar), np.dot(A,M_bar) )
-
-def C_suivant(r,P,A,C_actuel):
-	delta_t = T / (P - 1)
-	I = np.identity(r)
-	mat = ( (1. / delta_t) * I ) - A
-	multiplication = (1. / delta_t) * np.linalg.inv(mat)
-	return np.dot(multiplication,np.transpose(C_actuel))
-
-def M_reduit(M,r,mode):
-	P,N = np.array(M).shape
-	M_base = M_barre(M,r)
-
-	A = A_mat(N,mode)
-	A_tild = A_tilde(A,M_base)
-
-	C = []
-	C.append( np.dot( np.transpose(M_base), np.transpose(M[0]) ) )
-	for i in range(P-1):
-		suivant = C_suivant(r,P,A_tild,C[-1])
-		C.append(suivant)
-
-	retour = []
-	for i in range(P):
-		retour.append( np.dot(M_base, np.transpose(C[i]) ) )
-
-	return retour
-
-def affiche_M_Mtilde(N,P,r,mode):
-	M_valeurs = M(N,P,mode)
-	Mtilde_valeurs = M_reduit(M_valeurs, r, mode)
-	X = np.linspace(0,1,N+1)
-	X = [ (X[i] + X[i+1])/2 for i in range(len(X)-1) ]
-	t = np.linspace(0,T,P)
-	espace = []
-	temps = []
-	ordonnee1 = []
-	ordonnee2 = []
-	for te in range(len(t)):
-		ligne_M = M_valeurs[te]
-		ligne_Mtilde = Mtilde_valeurs[te]
-		for x in range(len(X)):
-			espace.append(X[x])
-			temps.append(t[te])
-			ordonnee1.append(ligne_M[x])
-			ordonnee2.append(ligne_Mtilde[x])
-	fig = plt.figure()
-	ax1 = fig.add_subplot(121, projection='3d')
-	ax1.scatter(np.array(espace), np.array(temps), np.array(ordonnee1))
-	ax2 = fig.add_subplot(122, projection='3d')
-	ax2.scatter(np.array(espace), np.array(temps), np.array(ordonnee2))
-	plt.show()
-
-def erreur_M(r,M,mode):
-	Mtilde = M_reduit(M,r,mode)
-	return np.linalg.norm(np.array(M) - np.array(Mtilde))**2
-
-def trace_erreur_M(r_min,r_max,N,P,mode):
-	r = np.arange(r_min,r_max+1)
-	M_val = M(N,P,mode)
-	erreurs = [erreur_M(i,M_val,mode) for i in r]
-	plt.plot(r,erreurs)
-	plt.show()
-
-###########################################################################################################
-# POD sur U
-###########################################################################################################
-
-def U_barre(U,r):
-	U_valeurs = np.copy(U)
-	U_valeurs = np.transpose(U_valeurs)
-	gauche,val_p,droite = np.linalg.svd(U_valeurs)
-	return gauche[:,:r]
-
-def B_tilde(B,U_bar):
-	return np.dot( np.transpose(U_bar), np.dot(B,U_bar) )
-
-def M_tilde(M,U_bar):
-	retour = np.dot( np.transpose(U_bar), np.transpose(M))
-	retour = np.transpose(retour)
-	retour = np.flipud(retour)
-	return retour
-
-def D_suivant(r,P,Bt,D_actuel,Fm):
-	delta_t = T / (P - 1)
-	I = np.identity(r)
-	mat = ( (1. / delta_t) * I ) + Bt
-	right = Fm + ((1. / delta_t) * D_actuel)
-	return np.dot(np.linalg.inv(mat),np.transpose(right))
-
-def U_reduit(U,r,mode,M):
-	P,N = np.array(U).shape
-	U_base = U_barre(U,r)
-
-	B = B_mat(N,mode)
-	B_tild = B_tilde(B,U_base)
-
-	Fm_tild = M_tilde( F( np.array(M) ),U_base)
-
-	D = []
-	D.append( np.dot( np.transpose(U_base), np.transpose(U_T(N)) ) )
-	for i in range(P-1):
-		suivant = D_suivant(r,P,B_tild,D[-1],Fm_tild[i+1])
-		D.append(suivant)
-
-	retour = []
-	for i in range(P):
-		retour.append( np.dot(U_base, np.transpose(D[i]) ) )
-
-	retour = np.flipud(retour)
-
-	return retour
-
-def affiche_U_Utilde(N,P,r,mode,M):
-	U_valeurs = U(N,P,mode,M)
-	Utilde_valeurs = U_reduit(U_valeurs, r, mode, M)
-	X = np.linspace(0,1,N+1)
-	X = [ (X[i] + X[i+1])/2 for i in range(len(X)-1) ]
-	t = np.linspace(0,T,P)
-	espace = []
-	temps = []
-	ordonnee1 = []
-	ordonnee2 = []
-	for te in range(len(t)):
-		ligne_U = U_valeurs[te]
-		ligne_Utilde = Utilde_valeurs[te]
-		for x in range(len(X)):
-			espace.append(X[x])
-			temps.append(t[te])
-			ordonnee1.append(ligne_U[x])
-			ordonnee2.append(ligne_Utilde[x])
-	fig = plt.figure()
-	ax1 = fig.add_subplot(121, projection='3d')
-	ax1.scatter(np.array(espace), np.array(temps), np.array(ordonnee1))
-	ax2 = fig.add_subplot(122, projection='3d')
-	ax2.scatter(np.array(espace), np.array(temps), np.array(ordonnee2))
-	plt.show()
-
-def erreur_U(r,U,mode,M):
-	Utilde = U_reduit(U,r,mode,M)
-	return np.linalg.norm(np.array(U) - np.array(Utilde))**2
-
-def trace_erreur_U(r_min,r_max,N,P,mode,M):
-	r = np.arange(r_min,r_max+1)
-	U_val = U(N,P,mode,M)
-	erreurs = [erreur_U(i,U_val,mode,M) for i in r]
-	plt.plot(r,erreurs)
-	plt.show()
-
-
-###########################################################################################################
-# Application
-###########################################################################################################
-
-###########################################################################################################
-# Tests
+# Affichage
 ###########################################################################################################
 
 N = 120
@@ -360,13 +195,4 @@ r = 4
 mode = "aval"
 
 affiche_M_U(N,P,mode)
-
-#affiche_M_Mtilde(N,P,r,mode)
-
-#trace_erreur_M(1,10,N,P,mode)
-
-#M_fin = M(N,P,mode)
-#M_red = M_reduit(M_fin,r,mode)
-#affiche_U_Utilde(N,P,r,mode,M_fin)
-#trace_erreur_U(1,10,N,P,mode,M_fin)
 

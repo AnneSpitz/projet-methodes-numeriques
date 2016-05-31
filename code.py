@@ -460,7 +460,7 @@ def trace_erreur_U(r_min,r_max,N,P,mode,M):
 
 N = 60
 P = 20
-r = 1
+r = 3
 mode = "aval"
 
 #affiche_M_U(N,P,mode)
@@ -471,6 +471,7 @@ mode = "aval"
 
 M_fin = M(N,P,mode)
 M_red = M_reduit(M_fin,r,mode)
-affiche_U_Utilde(N,P,r,mode,M_fin)
+#affiche_U_Utilde(N,P,r,mode,M_fin)
+affiche_U_Utilde(N,P,r,mode,M_red)
 #trace_erreur_U(1,10,N,P,mode,M_fin)
 
